@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+
+server_state/
+*.db
+*.sqlite
+*.sqlite3
+
+alice.json
+bob.json
+*.profile.json
+
+.env
+.venv/
+venv/

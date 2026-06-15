@@ -1,0 +1,52 @@
+# Guião - Semana 7: MACs e Cifras Autenticadas
+
+Este documento contém as respostas às questões teóricas e um guia de testes práticos para os programas da semana 7.
+
+## Parte 1: Respostas às Questões Teóricas
+
+Q1: Considere que a mensagem é o URL `http://www.super-secret.com/manage?id=1001&role=user&perm=read`, e que o ataque consiste em estender a mensagem com o texto `&admin=true`. Qual o padding acrescentado pelo programa `mac_sha256_attack.py`? Quantos bytes tem?
+Resposta: O programa assume uma chave secreta de 32 bytes e, por isso, calcula o padding sobre `k || m`, onde `m` é o URL dado. O URL tem 62 bytes, logo o comprimento total antes do padding é `32 + 62 = 94` bytes, isto é, `94 * 8 = 752` bits (`0x02f0`). O padding acrescentado é:
+`\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\xf0`
+Tem 34 bytes no total: 1 byte inicial `0x80`, seguido de 25 bytes `0x00`, e termina com o comprimento original codificado em 8 bytes big-endian: `00 00 00 00 00 00 02 f0`.
+
+Q2: Internamente, a cifra AES-GCM usa também a cifra AES no modo CTR. No entanto, os seus comportamentos são significativamente diferentes. Qual a diferença, ao nível do criptograma produzido, entre cifrar a mesma mensagem com `pbenc_aes_ctr_hmac.py` ou com `pbenc_aes_gcm.py`? Justifique tendo em particular consideração o tamanho do ficheiro resultante e o que motiva essa diferença.
+Resposta: Nos dois casos não há padding do texto-limpo, porque tanto CTR como GCM funcionam como cifras de sequência. Assim, a parte correspondente ao criptograma tem exatamente o mesmo tamanho da mensagem original. A diferença está nos metadados de autenticação guardados no ficheiro. Em `pbenc_aes_ctr_hmac.py`, o ficheiro final contém `salt (16 bytes) + nonce CTR (16 bytes) + criptograma + tag HMAC-SHA256 (32 bytes)`, pelo que o resultado tem `|mensagem| + 64` bytes. Em `pbenc_aes_gcm.py`, o ficheiro final contém `salt (16 bytes) + nonce GCM (12 bytes) + criptograma com tag GCM embutida (16 bytes)`, pelo que o resultado tem `|mensagem| + 44` bytes. Ou seja, o ficheiro gerado com AES-GCM fica mais pequeno porque usa um nonce mais curto e uma tag de autenticação de 16 bytes, enquanto a solução CTR+HMAC precisa de guardar separadamente uma tag HMAC de 32 bytes.
+
+## Parte 2: Passo a Passo para Testes Práticos
+
+Criar um ficheiro de teste para os testes:
+`echo 'Mensagem secreta para a semana 7.' > segredo.txt`
+
+### 1. Testar o `mac_sha256.py`
+1. Gerar a chave MAC:
+   `python3 mac_sha256.py setup chave_mac.key`
+2. Calcular o MAC:
+   `python3 mac_sha256.py mac segredo.txt chave_mac.key`
+3. Verificar o MAC:
+   `python3 mac_sha256.py ver segredo.txt chave_mac.key`
+
+### 2. Testar o `mac_sha256_attack.py`
+1. Preparar a mensagem original:
+   `echo -n 'comment=10&uid=1001&role=user' > pedido.txt`
+2. Calcular o MAC original:
+   `python3 mac_sha256.py mac pedido.txt chave_mac.key`
+3. Executar o ataque:
+   `python3 mac_sha256_attack.py pedido.txt '&admin=true'`
+4. Verificar o MAC forjado:
+   `python3 mac_sha256.py ver pedido.txt.ext chave_mac.key`
+
+### 3. Testar o `pbenc_aes_ctr_hmac.py`
+1. Cifrar:
+   `python3 pbenc_aes_ctr_hmac.py enc segredo.txt`
+2. Decifrar:
+   `python3 pbenc_aes_ctr_hmac.py dec segredo.txt.enc`
+3. Confirmar o conteúdo recuperado:
+   `cat segredo.txt.dec`
+
+### 4. Testar o `pbenc_aes_gcm.py`
+1. Cifrar:
+   `python3 pbenc_aes_gcm.py enc segredo.txt`
+2. Decifrar:
+   `python3 pbenc_aes_gcm.py dec segredo.txt.enc`
+3. Confirmar o conteúdo recuperado:
+   `cat segredo.txt.dec`

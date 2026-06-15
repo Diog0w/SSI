@@ -1,0 +1,27 @@
+S8 - Questoes
+
+Q1
+Nao, se o proprio segredo partilhado `K` dessa sessao for comprometido, todas as chaves derivadas a partir dele pela KDF podem ser recomputadas.
+Logo, todas as mensagens cifradas nessa mesma sessao deixam de estar protegidas.
+
+Ha PFS no sentido classico apenas contra compromisso posterior de chaves de longo prazo, desde que cada sessao use um novo DH efemero.
+Mas se o segredo de sessao `K` for revelado, a seguranca dessa sessao fica comprometida.
+
+Q2
+A informacao das chaves publicas fica armazenada nos certificados X509:
+
+- a chave publica da CA em `CA.crt`;
+- a chave publica da Alice em `Alice.crt`;
+- a chave publica do Bob em `Bob.crt`.
+
+Os ficheiros `.key` guardam as chaves privadas, nao as publicas.
+
+Q3
+Nao. Se a Alice nao validar o certificado do Bob com a CA, ela pode continuar a verificar uma assinatura correta, mas essa assinatura pode pertencer a um atacante e nao ao Bob.
+
+Ou seja:
+
+- a verificacao da assinatura so prova que quem assinou conhece a chave privada correspondente;
+- sem validar o certificado, a Alice nao sabe se essa chave publica pertence mesmo ao Bob.
+
+Assim, um atacante pode apresentar o seu proprio certificado/chave, assinar os valores DH e montar um ataque de Man-in-the-Middle.

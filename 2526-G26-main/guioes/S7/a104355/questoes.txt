@@ -1,0 +1,30 @@
+S7 - Questoes
+
+Q1
+No ataque, o padding e calculado sobre `k || m`.
+Como a chave tem 32 bytes e o URL tem 62 bytes, o comprimento total antes do padding e 94 bytes.
+
+O padding SHA256 acrescentado e:
+`0x80 || 25 bytes 0x00 || 0x00000000000002f0`
+
+Em hexadecimal:
+`800000000000000000000000000000000000000000000000000000000000000002f0`
+
+Tem 34 bytes no total:
+- 1 byte `0x80`
+- 25 bytes `0x00`
+- 8 bytes com o comprimento original em bits (`94 * 8 = 752 = 0x02f0`)
+
+Q2
+Os dois programas produzem sempre criptogramas diferentes entre si para a mesma mensagem, porque usam formatos e metadados diferentes, e em cada execucao geram salt e nonce/IV aleatorios.
+
+Ao nivel do tamanho do ficheiro resultante:
+- `pbenc_aes_ctr_hmac.py` grava `salt(16) || iv(16) || ciphertext(|m|) || hmac(32)`, por isso o tamanho final e `|m| + 64` bytes.
+- `pbenc_aes_gcm.py` grava `salt(16) || nonce(12) || ciphertext(|m|) || tag_gcm(16)`, por isso o tamanho final e `|m| + 44` bytes.
+
+Logo, para a mesma mensagem, a versao AES-CTR + HMAC fica 20 bytes maior.
+
+Isto acontece porque:
+- no modo CTR nao ha padding, mas precisamos de guardar um HMAC-SHA256 separado com 32 bytes;
+- no AES-GCM tambem nao ha padding, mas a autenticacao ja vem integrada numa tag de 16 bytes;
+- alem disso, no formato adotado aqui o CTR usa IV de 16 bytes e o GCM usa nonce de 12 bytes.

@@ -1,0 +1,30 @@
+=========================================================
+ Respostas às Questões - Semana 5
+=========================================================
+
+QUESTÃO Q1
+Pergunta: Consegue observar diferenças no comportamento dos programas otp.py e bad_otp.py? Se sim, quais? 
+Resposta: Sim, a principal diferença reside na qualidade e no espaço da geração dos números aleatórios. 
+O programa `otp.py` utiliza um gerador criptograficamente seguro. Por outro lado, o `bad_otp.py` utiliza a função `bad_prng`, que restringe a semente do gerador a apenas 2 bytes. 
+Isto significa que a chave gerada terá sempre apenas 65.536 possibilidades diferentes ($2^{16}$). 
+Esta limitação reduz drasticamente o espaço da chave, permitindo que a cifra seja quebrada quase instantaneamente através de um ataque de força bruta às sementes, independentemente do tamanho da mensagem original.
+
+---------------------------------------------------------
+
+QUESTÃO Q2
+Pergunta: O ataque realizado no ponto anterior não entra em contradição com o resultado que estabelece a "segurança absoluta" da cifra one-time pad? Justifique.
+Resposta: Não entra em contradição. A "segurança absoluta" (Perfect Secrecy) da cifra One-Time Pad exige obrigatoriamente que a chave seja perfeitamente aleatória, que tenha um tamanho igual ou superior ao do texto-limpo, e que nunca seja reutilizada. 
+O ataque ao `bad_otp.py` funciona precisamente porque esta implementação específica falha no requisito da aleatoriedade perfeita. 
+A vulnerabilidade explorada não se encontra no algoritmo OTP em si, mas sim na previsibilidade e na fraca entropia do gerador pseudo-aleatório inseguro utilizado para criar a chave.
+
+---------------------------------------------------------
+
+QUESTÃO Q3
+Pergunta: Considere que codifica duas mensagens com a mesma chave, e a versão segura do one-time pad definida em otp.py. O que consegue aferir das mensagens originais? Quão fácil é construir um ataque?
+Resposta: Se cifrarmos duas mensagens originais ($M_1$ e $M_2$) com a mesma chave ($K$), obtemos os criptogramas $C_1 = M_1 \oplus K$ e $C_2 = M_2 \oplus K$. 
+Se efetuarmos um XOR entre os dois criptogramas interceptados ($C_1 \oplus C_2$), a chave anula-se mutuamente (visto que $K \oplus K = 0$). 
+O resultado será estritamente a relação entre as duas mensagens originais: $C_1 \oplus C_2 = M_1 \oplus M_2$. 
+A partir deste ponto, conseguimos aferir a relação direta entre os textos limpos. 
+Construir um ataque é relativamente fácil através de uma técnica de criptoanálise conhecida como "Crib Dragging". 
+O atacante adivinha uma palavra comum (o "crib", como "Olá", "para" ou "que") e faz sucessivamente o XOR dessa palavra ao longo da string resultante de $M_1 \oplus M_2$. 
+Quando a palavra calhar na posição correta de uma das mensagens, o resultado da operação revelará imediatamente um fragmento de texto legível da outra mensagem, permitindo ao atacante deduzir e reconstruir progressivamente ambas as mensagens em texto limpo.

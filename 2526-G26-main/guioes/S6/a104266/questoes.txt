@@ -1,0 +1,63 @@
+# Guião - Semana 6: Cifras Modernas
+
+Este documento contém as respostas às questões teóricas e o guia prático de testes para cifrar o conteúdo de um ficheiro, assegurando a confidencialidade dos dados.
+
+## Parte 1: Respostas às Questões Teóricas
+
+Q1: Qual o impacto de se considerar um NONCE fixo (e.g. tudo 0)? Que implicações terá essa prática na segurança da cifra?
+Resposta: Utilizar um NONCE fixo destrói a segurança da cifra. Numa cifra sequencial como o ChaCha20, a mesma chave e o mesmo NONCE geram exatamente a mesma sequência de bits pseudoaleatórios (keystream). Se um atacante intercetar dois criptogramas cifrados com o mesmo NONCE e chave, pode aplicar um XOR entre eles para anular a keystream e obter o XOR dos dois textos-limpos, o que frequentemente permite revelar o conteúdo original.
+
+Q2: A cifra ChaCha20, por se tratar de uma cifra sequencial síncrona, não promove difusão. Alterar um bit do texto-limpo de input afeta quantos bits do criptograma de output?
+Resposta: Afeta exatamente 1 bit. Como se trata de uma cifra sequencial síncrona, a cifragem é feita através de uma operação XOR bit a bit entre o texto-limpo e a keystream. Não há difusão (influência de bits de input no criptograma em múltiplas posições), logo a alteração não se propaga a outros bits.
+
+Q3: Um ataque a uma cifra (não autenticada) consiste tipicamente em executar bit flips. Para cada um dos modos CBC e CTR, se alterar um bit de um criptograma, quantos bits afeta na mensagem original após decifrar?
+Resposta: Modo CTR: Tal como o ChaCha20, altera exatamente 1 bit na mensagem original, na mesma posição. Modo CBC: Altera todo o bloco correspondente (16 bytes), corrompendo-o totalmente em média (cerca de 64 bits virados), e inverte exatamente 1 bit no bloco seguinte na mesma posição relativa.
+
+Q4: Qual o impacto de utilizar o programa chacha20_int_attck.py nos criptogramas produzidos pelos programas cfich_aes_cbc.py e cfich_aes_ctr.py?
+Resposta: Em AES-CTR: O ataque funciona perfeitamente. O modo CTR transforma uma cifra de blocos numa cifra sequencial, pelo que a matemática da manipulação de bits via XOR funciona da mesma forma. Em AES-CBC: O ataque falha no seu propósito. Ao tentar manipular um byte alterando o criptograma do bloco anterior, o atacante destrói (corrompe totalmente) o texto-limpo do bloco anterior, tornando evidente que o ficheiro foi adulterado.
+
+Q5: Qual a função do salt e do NONCE na versão de password-based encryption do ChaCha20? São ambos necessários conjuntamente?
+Resposta: O Salt garante que a chave derivada pela KDF a partir da password é única, impedindo ataques de dicionário pré-computados. O NONCE garante que a cifra ChaCha20 não reutiliza a mesma keystream para a mesma chave. São ambos necessários? Na prática sim. O Salt protege o processo de derivação da chave (Password-Based Encryption), enquanto o NONCE protege a operação da cifra em si.
+
+## Parte 2: Passo a Passo para Testes Práticos
+
+Cria um ficheiro de texto limpo para servir de base a todos os testes:
+`echo "Mensagem secreta para testes de criptografia." > segredo.txt`
+
+### 1. Testar o `cfich_chacha20.py`
+O programa recebe como argumentos o tipo de operação: setup, enc ou dec.
+1. Gerar a chave (setup): Cria um ficheiro contendo uma chave apropriada.
+   `python3 cfich_chacha20.py setup chave.key`
+2. Cifrar (enc): Cifra o ficheiro usando a chave lida do ficheiro.
+   `python3 cfich_chacha20.py enc segredo.txt chave.key`
+3. Decifrar (dec): Decifra o criptograma usando a chave lida.
+   `python3 cfich_chacha20.py dec segredo.txt.enc chave.key`
+4. Verificar: Lê o ficheiro recuperado.
+   `cat segredo.txt.enc.dec`
+
+### 2. Testar o `chacha20_int_attck.py`
+O propósito é ilustrar como pode ser manipulada a informação cifrada se soubermos um fragmento do conteúdo. Imagina que a palavra "secreta" está na posição 9.
+1. Executar o ataque: Substituir "secreta" por "hackeda" recebendo os argumentos `<fctxt> <pos> <ptxtAtPos> <newPtxtAtPos>`.
+   `python3 chacha20_int_attck.py segredo.txt.enc 9 "secreta" "hackeda"`
+2. Decifrar o ficheiro atacado: O ficheiro gravado tem o nome `<fctxt>.attck`.
+   `python3 cfich_chacha20.py dec segredo.txt.enc.attck chave.key`
+3. Verificar o resultado:
+   `cat segredo.txt.enc.attck.dec`
+   (Output esperado: "Mensagem hackeda para testes de criptografia.")
+
+### 3. Testar `cfich_aes_cbc.py` e `cfich_aes_ctr.py` 
+Utilizam a cifra por blocos AES, nos modos CBC e CTR.
+1. Gerar chave (setup):
+   `python3 cfich_aes_cbc.py setup chave_aes.key`
+2. Cifrar:
+   `python3 cfich_aes_cbc.py enc segredo.txt chave_aes.key`
+3. Decifrar:
+   `python3 cfich_aes_cbc.py dec segredo.txt.enc chave_aes.key`
+(Nota: O modo CBC necessita de Padding porque o texto limpo tem de ter um tamanho múltiplo do tamanho do bloco).
+
+### 4. Testar o `pbenc_chacha20.py` 
+Suporta Password-Based Encryption e deriva os segredos a partir de uma pass-phrase com recurso a uma KDF. As opções `enc` e `dec` deixam de receber o nome do ficheiro da chave.
+1. Cifrar (lê do stdin a pass-phrase):
+   `python3 pbenc_chacha20.py enc segredo.txt`
+2. Decifrar:
+   `python3 pbenc_chacha20.py dec segredo.txt.enc`

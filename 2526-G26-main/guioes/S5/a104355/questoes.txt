@@ -1,0 +1,14 @@
+# S5 - Questoes
+
+## Q1
+Sim. `otp.py` usa aleatoriedade criptograficamente segura (`secrets`), enquanto `bad_otp.py` usa um PRNG inseguro com semente efetiva de apenas 2 bytes.  
+Na pratica, isso reduz drasticamente o espaco de chaves e permite ataque por forca bruta.
+
+## Q2
+Nao ha contradicao com a seguranca teorica do one-time pad.  
+A prova de seguranca absoluta assume chave realmente aleatoria, uniforme, secreta, com tamanho suficiente e usada uma unica vez.  
+No `bad_otp.py`, a geracao da chave viola a premissa de aleatoriedade uniforme e imprevisivel.
+
+## Q3
+Se duas mensagens forem cifradas com a mesma chave OTP, entao `C1 xor C2 = M1 xor M2`.  
+Isto revela relacoes entre as mensagens e permite ataques praticos (por exemplo, crib dragging e uso de texto conhecido), facilitando recuperar partes ou a totalidade das mensagens.

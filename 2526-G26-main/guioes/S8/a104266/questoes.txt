@@ -1,0 +1,45 @@
+Semana 8 - Criptografia Assimetrica
+
+Ficheiros implementados:
+- dh.py
+- dh_aes_gcm.py
+- gen_certs.sh
+- sts_aes_gcm.py
+
+Como testar:
+- cd semana8
+- python3 dh.py
+- python3 dh_aes_gcm.py
+- chmod +x gen_certs.sh
+- ./gen_certs.sh
+- ls CA.key CA.crt Alice.key Alice.crt Bob.key Bob.crt
+- python3 sts_aes_gcm.py
+
+O que faz cada ficheiro:
+- dh.py: simula um acordo de chaves Diffie-Hellman entre Alice e Bob em dois processos e imprime o segredo partilhado K nos dois lados.
+- dh_aes_gcm.py: depois do DH, deriva uma chave AES-GCM com HKDF e usa-a para trocar mensagens confidenciais entre os dois processos.
+- gen_certs.sh: gera a chave e o certificado da CA, as chaves RSA da Alice e do Bob, os CSRs e os certificados assinados pela CA.
+- sts_aes_gcm.py: implementa o protocolo Station-to-Station, validando certificados X509, verificando assinaturas RSA-PSS e trocando mensagens protegidas por AES-GCM.
+
+Q1
+Tambem nao. A KDF nao "salva" a sessao se o segredo base K dessa mesma execucao for exposto.
+Quem descobrir K consegue voltar a derivar as mesmas chaves e, por isso, ler ou validar tudo o que foi protegido a partir desse material.
+
+O beneficio de PFS aparece apenas porque cada ligacao usa um Diffie-Hellman efemero novo.
+Isso ajuda contra a fuga posterior das chaves de longo prazo, mas nao contra a divulgacao do proprio segredo de sessao.
+
+Q2
+Neste guiao, a parte publica de cada entidade esta dentro do respetivo certificado X509.
+Logo:
+- CA.crt contem a chave publica da CA
+- Alice.crt contem a chave publica da Alice
+- Bob.crt contem a chave publica do Bob
+
+Ja os ficheiros .key sao reservados para as chaves privadas.
+
+Q3
+Continuaria vulneravel a Man-in-the-Middle.
+A assinatura, por si so, apenas mostra que a mensagem foi produzida por quem controla a chave privada correspondente a uma certa chave publica.
+
+Se a Alice nao confirmar que o certificado recebido foi mesmo emitido pela CA esperada para o Bob, falta a ligacao entre a chave e a identidade.
+Nessa situacao, um atacante pode interpor-se, apresentar o seu proprio certificado ou chave publica, assinar os parametros DH e estabelecer duas sessoes separadas: uma com a Alice e outra com o Bob.

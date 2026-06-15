@@ -1,0 +1,35 @@
+Q1.
+As instrucoes que leem `__elgg_ts` e `__elgg_token` servem para apanhar os tokens anti-CSRF validos da sessao da vitima.
+No Elgg, a cookie de autenticacao por si so nao chega para executar a acao "add friend"; o servidor tambem confere estes dois campos.
+Sem esses valores, o pedido e recusado.
+
+Q2.
+Sim, continuava a dar para explorar.
+O modo Editor so muda a forma como o utilizador escreve o conteudo no browser e nao impede que alguem construa manualmente o pedido HTTP que grava o perfil.
+Mesmo que a interface escondesse HTML ou JavaScript, um atacante podia usar as DevTools, um proxy interceptador ou outro cliente HTTP para enviar exatamente o payload que quisesse.
+
+Q3.
+O ataque enquadra-se em Stored XSS.
+O script malicioso fica guardado no perfil do atacante e e entregue mais tarde a cada utilizador que visita essa pagina, sendo executado no browser da vitima.
+Nao e Reflected XSS porque o payload nao regressa logo na resposta ao mesmo pedido.
+Tambem nao se trata de DOM XSS, porque a vulnerabilidade principal nao nasce de logica insegura no DOM do lado do cliente; nasce do facto de a aplicacao armazenar e voltar a servir codigo ativo.
+
+Q4.
+Os tres sites diferem na politica CSP que entregam ao browser e, por isso, no conjunto de scripts que o browser aceita executar.
+
+`www.example32a.com`
+Nao tem CSP. Resultado: scripts inline, scripts do proprio host, scripts de outros hosts e `onclick` funcionam.
+
+`www.example32b.com`
+Tem CSP definida no Apache com `default-src 'self'; script-src 'self' *.example70.com`.
+Logo, ficam permitidos apenas scripts do proprio site e de `example70.com`; inline scripts e event handlers inline ficam bloqueados.
+
+`www.example32c.com`
+Tem CSP definida na aplicacao PHP. Alem de `self` e `*.example70.com`, inclui um nonce (`111-111-111`) que autoriza um inline script especifico.
+Por isso ha um script inline que executa em `example32c` mas nao em `example32b`.
+
+Na resolucao da Task 7, alterei:
+- `example32b` para incluir tambem `*.example60.com`
+- `example32c` para incluir `*.example60.com` e o nonce `222-222-222`
+
+Isso explica porque a Area 5 passa a funcionar e porque, em `example32c`, a Area 2 tambem deixa de ser bloqueada.

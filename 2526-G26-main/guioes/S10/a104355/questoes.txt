@@ -1,0 +1,15 @@
+Q1.
+As linhas que leem `__elgg_ts` e `__elgg_token` vao buscar do proprio browser da vitima os dois valores anti-CSRF que o Elgg exige para aceitar a operacao. Sao precisas porque o pedido "add friend" nao depende so da cookie de sessao; o servidor tambem verifica estes dois parametros. Sem eles, ou com valores errados/antigos, o pedido e rejeitado.
+
+Q2.
+Sim, ainda e possivel. O modo Editor e apenas uma ajuda/interface do lado do cliente; nao e uma defesa criptografica nem uma garantia de seguranca do lado do servidor. Mesmo que a interface so mostrasse o modo Editor, um atacante podia continuar a injetar o HTML/JavaScript malicioso construindo ou alterando diretamente o pedido HTTP que grava o perfil, por exemplo com as ferramentas de developer, proxy, script ou outro cliente HTTP. O modo Text apenas facilita a insercao manual do payload sem o editor mexer no codigo.
+
+Q3.
+O ataque das Tasks 1 a 4 e Stored XSS. O motivo e que o codigo malicioso fica guardado no perfil do atacante no servidor; depois, quando outra vitima visita essa pagina, o browser da vitima descarrega a pagina ja contaminada e executa o JavaScript. Nao e Reflected XSS porque o payload nao vai e volta num unico pedido imediato. Nao e DOM XSS porque a vulnerabilidade principal nao nasce de uma manipulacao insegura do DOM no browser; nasce do facto de a aplicacao armazenar e voltar a servir codigo ativo.
+
+Q4.
+`www.example32a.com` nao define nenhuma politica CSP. Resultado: o browser aceita scripts inline, scripts do proprio site, scripts de outros sites usados no ficheiro e tambem o `onclick` do botao. E o caso mais permissivo.
+
+`www.example32b.com` define CSP no Apache com `default-src 'self'; script-src 'self' *.example70.com`. Isso significa que o browser aceita JavaScript vindo do proprio site e de hosts em `example70.com`, mas bloqueia scripts inline e event handlers inline. Por isso o script local da Area 4 corre, o da Area 6 corre, e os restantes comportamentos inline ficam bloqueados. A Area 5 falha porque vem de `www.example60.com`, que nao esta permitido.
+
+`www.example32c.com` define CSP na propria aplicacao PHP. Aqui a politica permite `self`, permite o nonce `111-111-111` e permite `*.example70.com`. Por isso a Area 1 corre porque o nonce coincide, a Area 4 corre porque vem do proprio site, a Area 6 corre porque vem de `example70`, e as Areas 2, 3 e 5 falham. A diferenca principal face a `example32b` e que aqui a politica e gerada pela aplicacao e nao pelo Apache, e alem disso usa nonce para autorizar um script inline especifico.

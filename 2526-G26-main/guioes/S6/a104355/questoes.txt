@@ -1,0 +1,26 @@
+S6 - Questoes
+
+Q1
+Usar NONCE fixo com a mesma chave em ChaCha20 reaproveita o mesmo keystream.
+Isso permite relacionar criptogramas (C1 xor C2 = P1 xor P2) e quebra confidencialidade.
+
+Q2
+Com ChaCha20 (cifra sequencial sincrona), alterar 1 bit no texto-limpo altera exatamente 1 bit no criptograma, na mesma posicao.
+
+Q3
+Bit flip no AES-CTR:
+- afeta 1 bit correspondente no texto-limpo decifrado.
+
+Bit flip no AES-CBC:
+- corrompe o bloco inteiro Pi;
+- e afeta 1 bit correspondente no bloco seguinte Pi+1.
+
+Q4
+O programa chacha20_int_attck.py foi desenhado para cifra sequencial (relacao direta por XOR).
+- Em AES-CTR, o principio e semelhante e a manipulacao por bit flip continua viavel.
+- Em AES-CBC, a mesma tecnica direta nao se aplica da mesma forma; os efeitos sao por blocos (corrupcao + flip no bloco seguinte).
+
+Q5
+Salt: usado na KDF (PBKDF2) para derivar chaves diferentes mesmo com a mesma passphrase e impedir precomputacoes.
+Nonce: usado na cifra ChaCha20 para garantir keystream unico por cifragem.
+Sao ambos necessarios: salt protege a derivacao da chave; nonce protege a operacao da cifra com essa chave.
